@@ -52,9 +52,11 @@ static void my_dbg_logger(const char *str)
         XPLMDebugString(str);
 }
 
+
 // Our flight loop callback
 float MainFlightLoopCallback(float elapsedMe, float elapsedSim, int counter, void * refcon);
 
+// Plugin Start
 PLUGIN_API int XPluginStart(char* outName, char* outSig,char* outDesc){
 
         XPLMEnableFeature("XPLM_USE_NATIVE_PATHS", 1);
