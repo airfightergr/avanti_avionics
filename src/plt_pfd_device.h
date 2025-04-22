@@ -5,6 +5,7 @@
 #include "acfutils/dr.h"
 
 void plt_pfd_init(void);
+void plt_pfd_destroy(void);
 void plf_pfd_draw_enable(void);
 void plt_pfd_draw_disable(void);
 void load_resources(void);

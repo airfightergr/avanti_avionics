@@ -67,6 +67,8 @@ add_library(avanti_avionics SHARED
         src/units_conv.c src/units_conv.h
         src/pfd.c src/pfd.h
         src/plt_pfd_device.c  src/plt_pfd_device.h
+        src/tablet_device.c     src/tablet_device.h
+        src/libelec/libelec.c src/libelec/libelec.h
         #src/file_io.h src/file_io.c
         #        src/commands.c src/commands.h
 )
@@ -88,7 +90,12 @@ find_package(OpenGL REQUIRED)  # apt install freeglut3-dev
 find_library(OPENAL_LIBRARY NAMES openal OpenAL OpenAL32)  # apt install libopenal-dev
 find_library(GLUT_LIBRARY NAMES glut GLUT glut64)  # apt install freeglut3-dev
 # target_link_libraries(plugin ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY} ${GLUT_LIBRARY})
-
+# find_package(OpenSSL REQUIRED)
+# if (OpenSSL_FOUND)
+#         message(STATUS "Found OpenSSL: ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
+# else()
+#         message(FATAL_ERROR "OpenSSL not found")
+# endif()
 
 # Link X-Plane plugin system libraries. They are only provided for OS X and Windows.
 if (WIN32 OR APPLE)
@@ -101,7 +108,7 @@ endif ()
 # Link library for dynamic loading of shared objects on UNIX systems.
 if (UNIX)
         find_library(DL_LIBRARY dl)
-        target_link_libraries(avanti_avionics ${DL_LIBRARY})
+        target_link_libraries(avanti_avionics PRIVATE ${DL_LIBRARY})
 endif ()
 
 # Link OS X core system libraries.
@@ -133,8 +140,10 @@ elseif (UNIX)
         # Restrict set of symbols exported from the plugin. This reduces changes of
         # conflict with other plugins, in particular ones with Lua interpreter
         # embedded.
-        target_link_libraries(avanti_avionics -Wl,--version-script -Wl,"${CMAKE_SOURCE_DIR}/src/exports.txt")
-        target_link_libraries(avanti_avionics ${LIBACFUTILS_LIBS})
+        target_link_libraries(avanti_avionics PRIVATE -Wl,--version-script -Wl,"${CMAKE_SOURCE_DIR}/src/exports.txt")
+        target_link_libraries(avanti_avionics PRIVATE ${LIBACFUTILS_LIBS})
+        # target_link_libraries(avanti_avionics PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
 endif ()
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)

@@ -162,7 +162,7 @@ void drawing_enable(void) {
     get_directory_path(acf_dir_path, dir_path, sizeof(dir_path));
     logMsg("Folder Path: %s", dir_path);
 
-    char plugin_resouces[] = "plugins/avanti_plugin/resources/";
+    char plugin_resouces[] = "plugins/avanti_avionics/resources/";
 
     strncat(dir_path, plugin_resouces, sizeof(dir_path) - strlen(dir_path) - 1);
     logMsg("Resources Folder: %s", dir_path);

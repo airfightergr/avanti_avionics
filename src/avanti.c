@@ -7,6 +7,7 @@ Scope to understand how work with c/c++ and produce a working plugin for X-Plane
 */
 
 // system includes
+#include <sched.h>
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
@@ -23,8 +24,11 @@ Scope to understand how work with c/c++ and produce a working plugin for X-Plane
 #include "units_conv.h"
 #include "pfd.h"
 #include "plt_pfd_device.h"
+#include "tablet_device.h"
 
 #include <acfutils/log.h>
+
+#include "libelec/libelec.h"
 
 // Log buffer
 char logbuff[256];
@@ -45,6 +49,13 @@ char logbuff[256];
 #if __GNUC__ && IBM
 #include <GL/gl.h>
 #endif
+
+#define PLUGIN_VERSION "1.0.0"
+
+// LIBELEC stuff
+#define XPLANE
+#define LIBELEC_WITH_DRS
+static elec_sys_t* elecsys = NULL;
 
 /* This will be your custom logging function */
 static void my_dbg_logger(const char *str)
@@ -78,12 +89,18 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig,char* outDesc){
 
         plt_pfd_init();
 
+        tablet_init();
+
         log_init(my_dbg_logger, "[P180-AVANTI_AVIONICS]: ");
+
+        elecsys = libelec_new("elec.net");
 
         if (PluginID != XPLM_NO_PLUGIN_ID)
         {
 
         }
+
+        logMsg("Plugin version: %s", PLUGIN_VERSION);
 
 return 1;
 
@@ -98,6 +115,7 @@ PLUGIN_API void XPluginStop(void)
         // uregister drawing
         drawing_disable();
         plt_pfd_draw_disable();
+        tablet_draw_disable();
 
 }
 
@@ -108,14 +126,20 @@ PLUGIN_API int XPluginEnable(void)
         drawing_enable();
         load_resources();
         plf_pfd_draw_enable();
+        tablet_draw_enable();
+
+        libelec_sys_start(elecsys);
 
         return 1;
 }
 
-
 PLUGIN_API void XPluginDisable(void)
 {
         drefs_fini();
+        plt_pfd_destroy();
+        tablet_destroy();
+        libelec_sys_stop(elecsys);
+        libelec_destroy(elecsys);
 }
 
 
