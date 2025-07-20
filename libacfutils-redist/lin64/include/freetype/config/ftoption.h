@@ -306,10 +306,8 @@ FT_BEGIN_HEADER
   /*   Do not #undef these macros here since the build system might define */
   /*   them for certain configurations only.                               */
   /*                                                                       */
-#ifdef	_WIN32
-#define FT_EXPORT(x)      __declspec(dllexport) extern x
-#define FT_EXPORT_DEF(x)  __declspec(dllexport) x
-#endif	/* _WIN32 */
+/* #define FT_EXPORT(x)      extern x */
+/* #define FT_EXPORT_DEF(x)  x */
 
 
   /*************************************************************************/

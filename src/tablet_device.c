@@ -2,6 +2,7 @@
 
 #include "datarefs.h"
 #include "tablet_device.h"
+#include "tablet_ui.h"
 #include "XPLMUtilities.h"
 #include "acfutils/core.h"
 #include "acfutils/geom.h"
@@ -10,13 +11,13 @@
 #include "ft2build.h"
 #include <unistd.h>
 #include FT_FREETYPE_H
-#include "acfutils/mt_cairo_render.h"
+// #include "acfutils/mt_cairo_render.h"
 #include "acfutils/log.h"
 #include "acfutils/dr.h"
 #include "XPLMDefs.h"
 #include "XPLMDisplay.h"
 #include "XPLMGraphics.h"
-#include "cairo.h"
+// #include "cairo.h"
 #include "pfd.h"
 #include <stdio.h>
 #include <string.h>
@@ -26,8 +27,8 @@ int tablet_scr_pop_handler(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, v
 
 #define TABLET_SCREEN_W 718
 #define TABLET_SCREEN_H 448
-static mt_cairo_render_t* tablet_screen_render;
-static mt_cairo_render_t* tablet_bezel_render;
+// static mt_cairo_render_t* tablet_screen_render;
+// static mt_cairo_render_t* tablet_bezel_render;
 XPLMAvionicsID tablet_screen_handle;
 
 void tablet_bezel_draw_cb(cairo_t* cr, unsigned w, unsigned h, void* ref_data) {
@@ -35,13 +36,13 @@ void tablet_bezel_draw_cb(cairo_t* cr, unsigned w, unsigned h, void* ref_data) {
         UNUSED(h);
         UNUSED(ref_data);
 
-        cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
-        cairo_paint(cr);
-        cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+        // cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+        // cairo_paint(cr);
+        // cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 
-        cairo_set_source_rgb(cr, 0, 0, 0);
-        cairo_rectangle(cr, 0, 0, 718, 448);
-        cairo_fill(cr);
+        // cairo_set_source_rgb(cr, 0, 0, 0);
+        // cairo_rectangle(cr, 0, 0, 718, 448);
+        // cairo_fill(cr);
 }
 
 int tablet_bezel_draw_loop(XPLMDrawingPhase phase, int isBefore, void* refcon) {
@@ -49,8 +50,8 @@ int tablet_bezel_draw_loop(XPLMDrawingPhase phase, int isBefore, void* refcon) {
         UNUSED(isBefore);
         UNUSED(refcon);
 
-        vect2_t tablet_loc = VECT2(0, 0);
-        mt_cairo_render_draw(tablet_bezel_render, tablet_loc, VECT2(TABLET_SCREEN_W, TABLET_SCREEN_H));
+        // vect2_t tablet_loc = VECT2(0, 0);
+        // mt_cairo_render_draw(tablet_bezel_render, tablet_loc, VECT2(TABLET_SCREEN_W, TABLET_SCREEN_H));
         return 1;
 }
 
@@ -63,22 +64,22 @@ void tablet_screen_draw_cb(cairo_t* cr, unsigned w, unsigned h, void* ref_data) 
         UNUSED(h);
         UNUSED(ref_data);
 
-        cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
-        cairo_paint(cr);
-        cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+        // cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+        // cairo_paint(cr);
+        // cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 
-        cairo_set_source_rgb(cr, 0.9, 0.1, 0.1);
-        cairo_rectangle(cr, 0, 0, 718, 448);
-        cairo_fill(cr);
+        // cairo_set_source_rgb(cr, 0.9, 0.1, 0.1);
+        // cairo_rectangle(cr, 0, 0, 718, 448);
+        // cairo_fill(cr);
 
-        cairo_set_source_rgb(cr, 0.1, 0.9, 0.1);
-        cairo_rectangle(cr, 10, 10, 698, 428);
-        cairo_fill(cr);
+        // cairo_set_source_rgb(cr, 0.1, 0.9, 0.1);
+        // cairo_rectangle(cr, 10, 10, 698, 428);
+        // cairo_fill(cr);
 
-        // draw a button
-        cairo_set_source_rgb(cr, 0.1, 0.0, 0.9);
-        cairo_rectangle(cr, 100, 100, 100, 50);
-        cairo_fill(cr);
+        // // draw a button
+        // cairo_set_source_rgb(cr, 0.1, 0.0, 0.9);
+        // cairo_rectangle(cr, 100, 100, 100, 50);
+        // cairo_fill(cr);
 
 }
 
@@ -87,33 +88,34 @@ int tablet_screen_draw_loop(XPLMDrawingPhase phase, int isBefore, void* refcon) 
         UNUSED(isBefore);
         UNUSED(refcon);
 
-        vect2_t tablet_loc = VECT2(0, 0);
-        mt_cairo_render_draw(tablet_screen_render, tablet_loc, VECT2(TABLET_SCREEN_W, TABLET_SCREEN_H));
+        // vect2_t tablet_loc = VECT2(0, 0);
+        // mt_cairo_render_draw(tablet_screen_render, tablet_loc, VECT2(TABLET_SCREEN_W, TABLET_SCREEN_H));
         return 1;
 }
 
 void tablet_draw_enable(void) {
-        tablet_screen_render = mt_cairo_render_init(
-                                TABLET_SCREEN_W, TABLET_SCREEN_H,
-                                20, NULL, tablet_screen_draw_cb,
-                                NULL, NULL);
+        // tablet_screen_render = mt_cairo_render_init(
+        //                         TABLET_SCREEN_W, TABLET_SCREEN_H,
+        //                         20, NULL, tablet_screen_draw_cb,
+        //                         NULL, NULL);
 
-        tablet_bezel_render = mt_cairo_render_init(
-                                TABLET_SCREEN_W, TABLET_SCREEN_H,
-                                20, NULL, tablet_bezel_draw_cb,
-                                NULL, NULL);
+        // tablet_bezel_render = mt_cairo_render_init(
+        //                         TABLET_SCREEN_W, TABLET_SCREEN_H,
+        //                         20, NULL, tablet_bezel_draw_cb,
+        //                         NULL, NULL);
 }
 
 void tablet_draw_disable(void) {
-        mt_cairo_render_fini(tablet_screen_render);
-        tablet_screen_render = NULL;
+        // mt_cairo_render_fini(tablet_screen_render);
+        // tablet_screen_render = NULL;
 
-        mt_cairo_render_fini(tablet_bezel_render);
-        tablet_bezel_render = NULL;
+        // mt_cairo_render_fini(tablet_bezel_render);
+        // tablet_bezel_render = NULL;
 }
 
 void tablet_scr_screen_draw(void* inRefcon) {
-        tablet_screen_draw_loop(NULL, NULL, NULL);
+        // tablet_screen_draw_loop(NULL, NULL, NULL);
+        TabletUIDraw(0, 0, 718, 448, NULL);
 }
 
 int tablet_scr_bezel_click_f(int x, int y, XPLMMouseStatus inMouse, void* inRefcon) {

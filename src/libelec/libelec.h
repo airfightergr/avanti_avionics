@@ -22,6 +22,10 @@
 #include <acfutils/geom.h>
 #include <acfutils/sysmacros.h>
 
+#ifdef	LIBELEC_WITH_LIBSWITCH
+#include <libswitch.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,6 +98,13 @@ typedef enum {
 	 * @see \ref ELEC_TRU
 	 */
 	ELEC_INV,
+	/**
+	 * A transformer changes the AC voltage on its input into a
+	 * different AC voltage on its output. The voltage ratio is fixed
+	 * based on the ratio of the number of turns between the
+	 * transformer's primary and secondary windings.
+	 */
+	ELEC_XFRMR,
 	/**
 	 * A load is a consumer of electrical energy. This can be anything
 	 * you need it to be. libelec tells you if the load is powered
@@ -281,6 +292,17 @@ typedef struct {
 } elec_tru_info_t;
 
 /**
+ * Info structure describing a transformer.
+ */
+typedef struct {
+	double		in_volts;	/**< Nominal input voltage. */
+	double		out_volts;	/**< Nominal output voltage. */
+	vect2_t		*eff_curve;	/**< Output Watts -> efficiency curve */
+	const elec_comp_info_t *input;	/**< input bus side */
+	const elec_comp_info_t *output;	/**< output bus side */
+} elec_xfrmr_info_t;
+
+/**
  * This is the callback type used by electrical loads for cases where
  * the caller has installed a custom load demand callback using
  * libelec_load_set_load_cb().
@@ -396,6 +418,7 @@ struct elec_comp_info_s {
 		elec_gen_info_t		gen;	/**< Valid for an ELEC_GEN. */
 		/** Valid for an ELEC_TRU and ELEC_INV. */
 		elec_tru_info_t		tru;
+		elec_xfrmr_info_t	xfrmr;
 		elec_load_info_t	load;	/**< Valid for an ELEC_LOAD. */
 		elec_bus_info_t		bus;	/**< Valid for an ELEC_BUS. */
 		elec_cb_info_t		cb;	/**< Valid for an ELEC_CB. */
@@ -413,6 +436,19 @@ struct elec_comp_info_s {
 		bool			invis;
 		vect3_t			color;
 	} gui;
+	/**
+	 * Physical location information. This allows locating the component
+	 * in 3D space in the actual aircraft. libelec doesn't use this for
+	 * anything, but you can use this to implement informational systems,
+	 * such as a 3D hint system.
+	 */
+	struct {
+		/// Location in 3D space in meters. `NULL_VECT3` if undefined.
+		vect3_t			pos;
+		/// Rotation in degrees (x=pitch, y=yaw, z=roll).
+		/// `NULL_VECT3` if undefined.
+		vect3_t			rot;
+	} phys;
 };
 
 /**
@@ -467,10 +503,15 @@ void libelec_remove_user_cb(elec_sys_t *sys, bool pre, elec_user_cb_t cb,
 
 /* Finding devices and interrogating their configuration */
 elec_comp_t *libelec_comp_find(elec_sys_t *sys, const char *name);
-void libelec_walk_comps(elec_sys_t *sys, void (*cb)(elec_comp_t *, void *),
-    void *userinfo);
+void libelec_walk_comps(const elec_sys_t *sys,
+    void (*cb)(elec_comp_t *, void *), void *userinfo);
 const elec_comp_info_t *libelec_comp2info(const elec_comp_t *comp);
+
 bool libelec_comp_is_AC(const elec_comp_t *comp);
+elec_comp_type_t libelec_comp_get_type(const elec_comp_t *comp);
+const char *libelec_comp_get_name(const elec_comp_t *comp);
+const char *libelec_comp_get_location(const elec_comp_t *comp);
+bool libelec_comp_get_autogen(const elec_comp_t *comp);
 
 size_t libelec_comp_get_num_conns(const elec_comp_t *comp);
 elec_comp_t *libelec_comp_get_conn(const elec_comp_t *comp, size_t i);
@@ -515,16 +556,19 @@ elec_get_load_cb_t libelec_load_get_load_cb(elec_comp_t *load);
 void libelec_cb_set(elec_comp_t *comp, bool set);
 bool libelec_cb_get(const elec_comp_t *comp);
 double libelec_cb_get_temp(const elec_comp_t *comp);
+#ifdef	LIBELEC_WITH_LIBSWITCH
+switch_t *libelec_cb_get_sw(const elec_comp_t *comp);
+#endif	// defined(LIBELEC_WITH_LIBSWITCH)
 
 /* Ties */
 void libelec_tie_set_list(elec_comp_t *comp, size_t list_len,
-    elec_comp_t *const bus_list[STATIC_ARRAY_LEN_ARG(list_len)]);
+    elec_comp_t *const*bus_list);
 void libelec_tie_set(elec_comp_t *comp, ...) SENTINEL_ATTR;
 void libelec_tie_set_v(elec_comp_t *comp, va_list ap);
 void libelec_tie_set_all(elec_comp_t *comp, bool tied);
 bool libelec_tie_get_all(elec_comp_t *comp);
 size_t libelec_tie_get_list(elec_comp_t *comp, size_t cap,
-    elec_comp_t *bus_list[STATIC_ARRAY_LEN_ARG(cap)]);
+    elec_comp_t **bus_list);
 size_t libelec_tie_get_num_buses(const elec_comp_t *comp);
 /*
  * Due to default argument promotion and va_start underneath,

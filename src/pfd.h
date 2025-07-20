@@ -10,7 +10,7 @@
 #include <XPLMDataAccess.h>
 #include <XPLMDisplay.h>
 
-#include <acfutils/mt_cairo_render.h>
+#include "acfutils/mt_cairo_render.h"
 
 
 void drawing_init(void);

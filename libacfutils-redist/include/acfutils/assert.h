@@ -82,6 +82,11 @@ extern "C" {
  * format string with arguments, to append to the message "assertion
  * <condition> failed:". Use this if you need to provide more context
  * why the assertion check failed.
+ *
+ * Example usage of VERIFY_MSG():
+ *```
+ * VERIFY_MSG(is_valid(foo), "foo was set to %d", foo);
+ *```
  */
 #define	VERIFY_MSG(x, fmt, ...) \
 	do { \
@@ -184,13 +189,13 @@ extern "C" {
 #define	ASSERT0(x)		VERIFY0(x)
 #define	ASSERT_MSG(x, fmt, ...)	VERIFY_MSG(x, fmt, __VA_ARGS__)
 #else	/* !DEBUG */
-#define	ASSERT(x)		UNUSED(x)
-#define	ASSERT3S(x, op, y)	do { UNUSED(x); UNUSED(y); } while (0)
-#define	ASSERT3U(x, op, y)	do { UNUSED(x); UNUSED(y); } while (0)
-#define	ASSERT3F(x, op, y)	do { UNUSED(x); UNUSED(y); } while (0)
-#define	ASSERT3P(x, op, y)	do { UNUSED(x); UNUSED(y); } while (0)
-#define	ASSERT0(x)		UNUSED(x)
-#define	ASSERT_MSG(x, fmt, ...)	UNUSED(x)
+#define	ASSERT(x)		LACF_UNUSED(x)
+#define	ASSERT3S(x, op, y)	do { LACF_UNUSED(x); LACF_UNUSED(y); } while (0)
+#define	ASSERT3U(x, op, y)	do { LACF_UNUSED(x); LACF_UNUSED(y); } while (0)
+#define	ASSERT3F(x, op, y)	do { LACF_UNUSED(x); LACF_UNUSED(y); } while (0)
+#define	ASSERT3P(x, op, y)	do { LACF_UNUSED(x); LACF_UNUSED(y); } while (0)
+#define	ASSERT0(x)		LACF_UNUSED(x)
+#define	ASSERT_MSG(x, fmt, ...)	LACF_UNUSED(x)
 #endif	/* !DEBUG */
 
 #ifdef	__cplusplus

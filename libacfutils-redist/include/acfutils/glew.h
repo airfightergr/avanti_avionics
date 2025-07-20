@@ -30,13 +30,18 @@
 #include <pthread.h>
 #endif
 
-/*
- * Includes & properly defines the context handler function for the
+/**
+ * \file
+ * Includes and properly defines the context handler function for the
  * GLEW OS-independent bindings (WGL/GLX).
+ *
  * This is needed since libacfutils uses GLEW-MX (multi-context) to
  * support multi-threaded rendering, where each context can have
  * different context caps (primarily for MacOS OpenGL 2.1/4.1
  * multi-context support).
+ *
+ * You should include `<acfutils/glew.h>` from your code, instead of
+ * going to the actual GLEW includes directly.
  */
 
 #ifndef	GLEW_MX
@@ -55,7 +60,8 @@
 #  define	GLEW_BUILD
 # endif
 #endif	/* !LIN && !APL && !defined(__MINGW32__) && !defined(ACFUTILS_DLL) */
-#include "GL/glew.h"
+#include <GL/glew.h>
+
 #include "core.h"
 #include "safe_alloc.h"
 #include "tls.h"
@@ -79,7 +85,6 @@ extern "C" {
 
 #if	LACF_GLEW_USE_NATIVE_TLS
 
-typedef struct GLEWContext GLEWContext_t;
 extern THREAD_LOCAL GLEWContext lacf_glew_per_thread_ctx;
 
 #define	lacf_glew_dllmain_hook(reason)

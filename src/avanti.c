@@ -13,31 +13,18 @@ Scope to understand how work with c/c++ and produce a working plugin for X-Plane
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "XPLMPlugin.h"
 #include "XPLMProcessing.h"
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 #include "XPLMDisplay.h"
 
-#include "datarefs.h"
-#include "units_conv.h"
-#include "pfd.h"
-#include "plt_pfd_device.h"
-#include "tablet_device.h"
-
-#include <acfutils/log.h>
-
-#include "libelec/libelec.h"
-
-// Log buffer
-char logbuff[256];
-
-//  Add dataref to DRE message
-#define MSG_ADD_DATAREF 0x01000000
-
 #if IBM
 #include <windows.h>
+#include <GL/gl.h>
+#endif
+#ifdef _WIN32
+#include <GL/glext.h>
 #endif
 #if LIN
 #include <GL/glew.h>
@@ -50,12 +37,30 @@ char logbuff[256];
 #include <GL/gl.h>
 #endif
 
+#include "datarefs.h"
+#include "tablet_ui.h"
+#include "units_conv.h"
+#include "pfd.h"
+#include "plt_pfd_device.h"
+#include "tablet_device.h"
+
+#include "acfutils/log.h"
+
+// #include "libelec/libelec.h"
+
+// Log buffer
+char logbuff[256];
+
+//  Add dataref to DRE message
+#define MSG_ADD_DATAREF 0x01000000
+
+
 #define PLUGIN_VERSION "1.0.0"
 
-// LIBELEC stuff
-#define XPLANE
-#define LIBELEC_WITH_DRS
-static elec_sys_t* elecsys = NULL;
+//LIBELEC stuff
+// #define XPLANE
+// #define LIBELEC_WITH_DRS
+// static elec_sys_t* elecsys = NULL;
 
 /* This will be your custom logging function */
 static void my_dbg_logger(const char *str)
@@ -63,9 +68,25 @@ static void my_dbg_logger(const char *str)
         XPLMDebugString(str);
 }
 
+float deferredStart(float meTime, float loopTime, int counter, void *refCon) {
+  logMsg("Deffered Start");
+  // char *elecFile = "/mnt/916d7a1f-7d19-4354-823b-6606cd3a516e/X-Plane 12/Aircraft/ILIAS/P180_Avanti_II/plugins/avanti_avionics/resources/elec.net";
+  // if (elecFile) {
+  //     logMsg("Elec net file found: %s", elecFile);
+  // } else {
+  //     logMsg("Elec net file not found");
+  // }
+  // elecsys = libelec_new(elecFile);
+
+  //  libelec_sys_start(elecsys);
+
+  return 0;
+}
 
 // Our flight loop callback
 float MainFlightLoopCallback(float elapsedMe, float elapsedSim, int counter, void * refcon);
+
+
 
 // Plugin Start
 PLUGIN_API int XPluginStart(char* outName, char* outSig,char* outDesc){
@@ -78,6 +99,7 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig,char* outDesc){
         strcpy(outDesc, "Avionics Plugin for Avanti");
 
         XPLMRegisterFlightLoopCallback(MainFlightLoopCallback, -1, NULL);
+        XPLMRegisterFlightLoopCallback(deferredStart, -1, NULL);
 
         XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
 
@@ -93,7 +115,6 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig,char* outDesc){
 
         log_init(my_dbg_logger, "[P180-AVANTI_AVIONICS]: ");
 
-        elecsys = libelec_new("elec.net");
 
         if (PluginID != XPLM_NO_PLUGIN_ID)
         {
@@ -127,8 +148,8 @@ PLUGIN_API int XPluginEnable(void)
         load_resources();
         plf_pfd_draw_enable();
         tablet_draw_enable();
-
-        libelec_sys_start(elecsys);
+        TabletUIStart();
+        // libelec_sys_start(elecsys);
 
         return 1;
 }
@@ -138,12 +159,13 @@ PLUGIN_API void XPluginDisable(void)
         drefs_fini();
         plt_pfd_destroy();
         tablet_destroy();
-        libelec_sys_stop(elecsys);
-        libelec_destroy(elecsys);
+        TabletUIStop();
+        // libelec_sys_stop(elecsys);
+        // libelec_destroy(elecsys);
 }
 
 
-PLUGIN_API void XPluginReceiveMessage(XPLMPluginID    inFromWho, int inMessage,  void *           inParam)
+PLUGIN_API void XPluginReceiveMessage(XPLMPluginID    inFromWho, int inMessage,  void * inParam)
 {
 
 }

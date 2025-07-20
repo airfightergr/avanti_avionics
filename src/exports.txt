@@ -7,7 +7,7 @@
   XPluginEnable;
   XPluginDisable;
   XPluginReceiveMessage;
+  ASN1_ANY_it;  # Explicitly export
  local:
    *;
 };
-

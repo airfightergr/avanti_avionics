@@ -13,13 +13,13 @@
 #include <XPLMDisplay.h>
 
 
-#include <acfutils/glew.h>
-#include <acfutils/log.h>
-#include <acfutils/mt_cairo_render.h>
+// #include "acfutils/glew.h"
+#include "acfutils/log.h"
+// #include "acfutils/mt_cairo_render.h"
 #include "acfutils/assert.h"
-#include <acfutils/core.h>
-#include <acfutils/helpers.h>
-#include <acfutils/sysmacros.h>
+#include "acfutils/core.h"
+#include "acfutils/helpers.h"
+#include "acfutils/sysmacros.h"
 #include "acfutils/dr.h"
 
 #include "pfd.h"
@@ -41,7 +41,7 @@
 #define DISPLAY_W (1024)
 #define DISPLAY_H (1024)
 
-static mt_cairo_render_t *render = NULL;
+// static mt_cairo_render_t *render = NULL;
 
 // acf relative path
 static XPLMDataRef acf_path_dref = NULL;
@@ -61,31 +61,31 @@ static void display_render_cb(cairo_t *cr, unsigned w, unsigned h, void *data) {
     UNUSED(data);
 
     // This clears the surface, so we have a clean slate to work from
-    cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
-    cairo_paint(cr);
-    cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    // cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+    // cairo_paint(cr);
+    // cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 
     // Draw some stuff!
 
-    cairo_set_line_width(cr, 8);
+    // cairo_set_line_width(cr, 8);
 
-    cairo_set_source_rgb(cr, 1.0, 0.4, 1);      // color
-    cairo_arc(cr, 0, 0, 280, 0, 2 * M_PI); //arc
-    cairo_stroke(cr);   // use this to paint the arc. If not, will be connected to the next one, by a line
+    // cairo_set_source_rgb(cr, 1.0, 0.4, 1);      // color
+    // cairo_arc(cr, 0, 0, 280, 0, 2 * M_PI); //arc
+    // cairo_stroke(cr);   // use this to paint the arc. If not, will be connected to the next one, by a line
 
     // draw another one?
-    cairo_set_source_rgb(cr, 1.0, 0.4, 1.0);
-    cairo_arc(cr, 0, 0, 175, 0.0f, 2 * M_PI);     //angles in randians
-    cairo_stroke(cr);
+    // cairo_set_source_rgb(cr, 1.0, 0.4, 1.0);
+    // cairo_arc(cr, 0, 0, 175, 0.0f, 2 * M_PI);     //angles in randians
+    // cairo_stroke(cr);
 
-    cairo_move_to(cr, 575, 419); // move to the center of the rose on x->
-    cairo_line_to(cr, 575, 395);
-    cairo_stroke(cr);
+    // cairo_move_to(cr, 575, 419); // move to the center of the rose on x->
+    // cairo_line_to(cr, 575, 395);
+    // cairo_stroke(cr);
 
-    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_set_font_size(cr, 55.0);
+    // cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    // cairo_set_font_size(cr, 55.0);
 
-    cairo_text_extents_t extents;   // init extents, the width of the text
+    // cairo_text_extents_t extents;   // init extents, the width of the text
 
     dr_find(&plt_hdg_ahars, "sim/cockpit2/gauges/indicators/heading_AHARS_deg_mag_copilot");
 
@@ -93,11 +93,11 @@ static void display_render_cb(cairo_t *cr, unsigned w, unsigned h, void *data) {
     char headg[4];
     snprintf(headg, 4,  "%03d", hdg);
 
-    cairo_text_extents(cr, headg, &extents);    // find the width and store to extents
+    // cairo_text_extents(cr, headg, &extents);    // find the width and store to extents
 
-    cairo_move_to(cr, 575 - extents.width/2, 200);
-    cairo_text_path(cr, headg);
-    cairo_fill(cr);
+    // cairo_move_to(cr, 575 - extents.width/2, 200);
+    // cairo_text_path(cr, headg);
+    // cairo_fill(cr);
 }
 
 // Here we draw the cairo-generated image onto the panel texture.
@@ -111,16 +111,16 @@ static int draw_loop(XPLMDrawingPhase phase, int is_before, void *refcon) {
 
     // This is the coordinates at which we want to draw on the panel texture.
     // !!warning!! This is OpenGL coordinates, so from the bottom of the texture
-    vect2_t panel_loc = VECT2(PANEL_X, PANEL_Y);
+    // vect2_t panel_loc = VECT2(PANEL_X, PANEL_Y);
 
-    mt_cairo_render_draw(render, panel_loc, VECT2(DISPLAY_W, DISPLAY_H));
+    // mt_cairo_render_draw(render, panel_loc, VECT2(DISPLAY_W, DISPLAY_H));
     return 1;
 }
 
 
 void drawing_init(void) {
-    glewInit();
-    mt_cairo_render_glob_init(false);
+    // glewInit();
+    // mt_cairo_render_glob_init(false);
 }
 
 
@@ -141,12 +141,12 @@ void get_directory_path(const char* full_path, char* dir_pth, size_t size) {
 
 void drawing_enable(void) {
     // Create our actual renderer
-    render = mt_cairo_render_init(
-            DISPLAY_W, DISPLAY_H,           // The size of our renderer/display
-            DISPLAY_FPS,
-            NULL, display_render_cb, NULL,  // callback. init, render, fini. only render is required
-            NULL                            // arbitrary data pointer, passed to callbacks
-    );
+    // render = mt_cairo_render_init(
+    //         DISPLAY_W, DISPLAY_H,           // The size of our renderer/display
+    //         DISPLAY_FPS,
+    //         NULL, display_render_cb, NULL,  // callback. init, render, fini. only render is required
+    //         NULL                            // arbitrary data pointer, passed to callbacks
+    // );
 
     // Fire up a display loop to draw our rendered image on the panel
     XPLMRegisterDrawCallback(draw_loop, xplm_Phase_Gauges, 1, NULL);
@@ -173,8 +173,8 @@ void drawing_enable(void) {
 void drawing_disable(void)
 {
     XPLMUnregisterDrawCallback(draw_loop, xplm_Phase_Gauges, 1, NULL);
-    mt_cairo_render_fini(render);
-    render = NULL;
+    // mt_cairo_render_fini(render);
+    // render = NULL;
 }
 
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.20)
 project(avanti_avionics VERSION 1.0 LANGUAGES C CXX)
 
 
@@ -9,33 +9,38 @@ set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for
 
 # By default, use optimized release configuration.
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif ()
 
 # language(s) standard
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB LIBACFUTILS_LIBS libacfutils-redist/lin64/lib/*.a)
+file(GLOB LIBACFUTILS_LIBS libacfutils-redist/lin64/lib/*.a
+        "${CMAKE_SOURCE_DIR}/libacfutils-redist/lin64/lib/libssl.a"  # Explicitly include libssl
+        "${CMAKE_SOURCE_DIR}/libacfutils-redist/lin64/lib/libcrypto.a"  # Explicitly include libcrypto
+)
 if(WIN32)
-        list(APPEND LIBACFUTILS_LIBS crypt32 ws2_32 gdi32 dbghelp psapi winmm)
+    list(APPEND LIBACFUTILS_LIBS crypt32 ws2_32 gdi32 dbghelp psapi winmm)
 else()
-        list(APPEND LIBACFUTILS_LIBS pthread)
+    list(APPEND LIBACFUTILS_LIBS pthread)
 endif()
 
 include_directories(
         "${CMAKE_SOURCE_DIR}/SDK/CHeaders/XPLM"
         "${CMAKE_SOURCE_DIR}/SDK/CHeaders/Wrappers"
         "${CMAKE_SOURCE_DIR}/SDK/CHeaders/Widgets"
+        "${CMAKE_SOURCE_DIR}/src/nanovg"
         "${CMAKE_SOURCE_DIR}/libacfutils-redist/include"
         "${CMAKE_SOURCE_DIR}/libacfutils-redist/lin64/include"
+        BEFORE "${CMAKE_SOURCE_DIR}/libacfutils-redist/include/openssl"  # Add OpenSSL headers from libacfutils
 )
 
 # Specify library search locations.
 if (WIN32)
-        list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_SOURCE_DIR}/SDK/Libraries/Win")
+    list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_SOURCE_DIR}/SDK/Libraries/Win")
 elseif (APPLE)
-        list(APPEND CMAKE_FRAMEWORK_PATH "${CMAKE_SOURCE_DIR}/SDK/Libraries/Mac")
+    list(APPEND CMAKE_FRAMEWORK_PATH "${CMAKE_SOURCE_DIR}/SDK/Libraries/Mac")
 elseif (UNIX)
 
 endif ()
@@ -51,7 +56,7 @@ add_definitions(-DAPL=$<BOOL:${APPLE}> -DIBM=$<BOOL:${WIN32}> -DLIN=$<AND:$<BOOL
 add_compile_options(-fexceptions)
 # On UNIX systems this makes symbols non-exported by default. On Windows this
 # option is simply ignored, since symbol visibility works differently there.
-add_compile_options(-fvisibility=hidden)
+# add_compile_options(-fvisibility=hidden)
 
 # Enable stricter warnings and then disable some we are not interested in.
 add_compile_options(-Wall -Wpedantic -Wshadow -Wfloat-equal -Wextra)
@@ -67,10 +72,23 @@ add_library(avanti_avionics SHARED
         src/units_conv.c src/units_conv.h
         src/pfd.c src/pfd.h
         src/plt_pfd_device.c  src/plt_pfd_device.h
+        src/tablet_ui.cpp src/tablet_ui.h
         src/tablet_device.c     src/tablet_device.h
-        src/libelec/libelec.c src/libelec/libelec.h
+        src/nanovg/nanovg.c
+        # src/libelec/fx_lin_multi2.c src/libelec/fx_lin_multi2.h
+        # src/libelec/libelec_drawing.c src/libelec/libelec_drawing.h
+        # src/libelec/libelec.c src/libelec/libelec.h
+        # src/libelec/libelec_types_impl.h src/libelec/libelec_types_net.h
+        # src/libelec/libelec_vis.c src/libelec/libelec_vis.h
         #src/file_io.h src/file_io.c
         #        src/commands.c src/commands.h
+        #
+        #  include imgui stuff
+        imgui/imgui.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_widgets.cpp
+        imgui/imgui_tables.cpp
+        imgui/imgui_impl_opengl3.cpp  # Ensure this is included
 )
 
 target_compile_features(avanti_avionics PUBLIC c_std_11)
@@ -79,10 +97,10 @@ target_compile_features(avanti_avionics PUBLIC c_std_11)
 #target_link_libraries(avanti_avionics PUBLIC ${LIBACFUTILS_LIBS} ${OPENGL_LIBRARIES})
 
 if (APPLE)
-        # X-Plane 12 supports OS X 11.3+, so this should ensure FlyWithLua can run on
-        # all supported versions.
-        target_compile_options(plugin PUBLIC -mmacosx-version-min=11.3)
-        target_link_libraries(plugin -mmacosx-version-min=11.3)
+    # X-Plane 12 supports OS X 11.3+, so this should ensure FlyWithLua can run on
+    # all supported versions.
+    target_compile_options(plugin PUBLIC -mmacosx-version-min=11.3)
+    target_link_libraries(plugin -mmacosx-version-min=11.3)
 endif ()
 
 # Link OpenGL and OpenAL related libraries.
@@ -90,59 +108,54 @@ find_package(OpenGL REQUIRED)  # apt install freeglut3-dev
 find_library(OPENAL_LIBRARY NAMES openal OpenAL OpenAL32)  # apt install libopenal-dev
 find_library(GLUT_LIBRARY NAMES glut GLUT glut64)  # apt install freeglut3-dev
 # target_link_libraries(plugin ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY} ${GLUT_LIBRARY})
-# find_package(OpenSSL REQUIRED)
-# if (OpenSSL_FOUND)
-#         message(STATUS "Found OpenSSL: ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
-# else()
-#         message(FATAL_ERROR "OpenSSL not found")
-# endif()
+
 
 # Link X-Plane plugin system libraries. They are only provided for OS X and Windows.
 if (WIN32 OR APPLE)
-        # if (WIN32)
-        find_library(XPLM_LIBRARY NAMES XPLM XPLM_64.lib)
-        find_library(XPWIDGETS_LIBRARY NAMES XPWidgets XPWidgets_64.lib)
-        target_link_libraries(avanti_avionics ${XPLM_LIBRARY} ${XPWIDGETS_LIBRARY})
+    # if (WIN32)
+    find_library(XPLM_LIBRARY NAMES XPLM XPLM_64.lib)
+    find_library(XPWIDGETS_LIBRARY NAMES XPWidgets XPWidgets_64.lib)
+    target_link_libraries(avanti_avionics ${XPLM_LIBRARY} ${XPWIDGETS_LIBRARY})
 endif ()
 
 # Link library for dynamic loading of shared objects on UNIX systems.
 if (UNIX)
-        find_library(DL_LIBRARY dl)
-        target_link_libraries(avanti_avionics PRIVATE ${DL_LIBRARY})
+    find_library(DL_LIBRARY dl)
+    target_link_libraries(avanti_avionics PUBLIC ${DL_LIBRARY})
 endif ()
 
 # Link OS X core system libraries.
 if (APPLE)
-        find_library(IOKIT_LIBRARY IOKit)
-        find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-        find_library(GLUT_LIBRARY GLUT)
-        find_library(OpenGL_LIBRARY OpenGL)
-        find_library(Cocoa_LIBRARY Cocoa)
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
+    find_library(GLUT_LIBRARY GLUT)
+    find_library(OpenGL_LIBRARY OpenGL)
+    find_library(Cocoa_LIBRARY Cocoa)
 
-        target_link_libraries(avanti_avionics ${IOKIT_LIBRARY} ${CORE_FOUNDATION_LIBRARY} ${GLUT_LIBRARY})
-        target_link_libraries(avanti_avionics ${OpenGL_LIBRARY} ${Cocoa_LIBRARY})
+    target_link_libraries(avanti_avionics ${IOKIT_LIBRARY} ${CORE_FOUNDATION_LIBRARY} ${GLUT_LIBRARY})
+    target_link_libraries(avanti_avionics ${OpenGL_LIBRARY} ${Cocoa_LIBRARY})
 endif ()
 
 if (WIN32)
-        # Unlike OS X and Linux we build standard libraries statically since X-Plane does not provide them.
-        target_link_libraries(avanti_avionics -static-libgcc -static-libstdc++ opengl32)
-        # MSYS2 for some reason always links against winpthread, so we have to work around it by statically linking the
-        # entire plugin. This allows building the plugin nativaly on Windows.
-        target_link_libraries(avanti_avionics -static)
+    # Unlike OS X and Linux we build standard libraries statically since X-Plane does not provide them.
+    target_link_libraries(avanti_avionics -static-libgcc -static-libstdc++ opengl32)
+    # MSYS2 for some reason always links against winpthread, so we have to work around it by statically linking the
+    # entire plugin. This allows building the plugin nativaly on Windows.
+    target_link_libraries(avanti_avionics -static)
 elseif (APPLE)
-        # Restrict set of symbols exported from the plugin. This reduces changes of
-        # conflict with other plugins, in particular ones with Lua interpreter
-        # embedded.
-        target_link_libraries(avanti_avionics "-exported_symbols_list ${CMAKE_SOURCE_DIR}/exports.sym_mac")
-        target_link_libraries(avanti_avionics "-framework XPLM -framework XPWidgets -ldl")
+    # Restrict set of symbols exported from the plugin. This reduces changes of
+    # conflict with other plugins, in particular ones with Lua interpreter
+    # embedded.
+    target_link_libraries(avanti_avionics "-exported_symbols_list ${CMAKE_SOURCE_DIR}/exports.sym_mac")
+    target_link_libraries(avanti_avionics "-framework XPLM -framework XPWidgets -ldl")
 elseif (UNIX)
-        # Specify additional runtime search laths for dynamically-linked libraries.
-        # Restrict set of symbols exported from the plugin. This reduces changes of
-        # conflict with other plugins, in particular ones with Lua interpreter
-        # embedded.
-        target_link_libraries(avanti_avionics PRIVATE -Wl,--version-script -Wl,"${CMAKE_SOURCE_DIR}/src/exports.txt")
-        target_link_libraries(avanti_avionics PRIVATE ${LIBACFUTILS_LIBS})
-        # target_link_libraries(avanti_avionics PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    # Specify additional runtime search laths for dynamically-linked libraries.
+    # Restrict set of symbols exported from the plugin. This reduces changes of
+    # conflict with other plugins, in particular ones with Lua interpreter
+    # embedded.
+    target_link_libraries(avanti_avionics PRIVATE -static-libgcc -static-libstdc++ -Wl,--version-script -Wl,"${CMAKE_SOURCE_DIR}/src/exports.txt")
+    target_link_libraries(avanti_avionics PRIVATE ${LIBACFUTILS_LIBS} ${DL_LIBRARY})
+    # target_link_libraries(avanti_avionics PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
 endif ()
 
@@ -156,14 +169,14 @@ set_target_properties(avanti_avionics PROPERTIES OUTPUT_NAME "avanti_avionics.xp
 set(PLUGIN_BUILD_DIR "${CMAKE_SOURCE_DIR}/../avanti_avionics")
 
 if(WIN32)
-        set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/win_x64")
-        set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/win_x64")
+    set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/win_x64")
+    set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/win_x64")
 elseif(APPLE)
-        set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/mac_x64")
-        set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/mac_x64")
+    set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/mac_x64")
+    set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/mac_x64")
 else()
-        set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/lin_x64")
-        set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/lin_x64")
+    set_target_properties(avanti_avionics PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/lin_x64")
+    set_target_properties(avanti_avionics PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/lin_x64")
 endif()
 
 #set_target_properties(avanti_avionics PROPERTIES LINK_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -fno-stack-protector -fPIC -fvisibility=hidden")
